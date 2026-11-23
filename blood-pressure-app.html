@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>บันทึกความดันโลหิต</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --primary: #e63946;
+    --primary-light: #ff6b6b;
+    --bg: #f8f9fa;
+    --card: #ffffff;
+    --text: #212529;
+    --text-muted: #6c757d;
+    --success: #2a9d8f;
+    --warning: #e9c46a;
+    --danger: #e63946;
+    --shadow: 0 2px 12px rgba(0,0,0,0.08);
+    --radius: 16px;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 80px;
+  }
+  .header {
+    background: linear-gradient(135deg, var(--primary), #c1121f);
+    color: white;
+    padding: 20px 16px 24px;
+    border-radius: 0 0 24px 24px;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 20px rgba(230,57,70,0.3);
+  }
+  .header h1 { font-size: 1.3rem; font-weight: 700; }
+  .header p { font-size: 0.8rem; opacity: 0.85; margin-top: 4px; }
+  .container { max-width: 500px; margin: 0 auto; padding: 16px; }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 4px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 12px 8px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  .tab-btn.active {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 2px 8px rgba(230,57,70,0.3);
+  }
+
+  /* Card */
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+  }
+  .card h2 {
+    font-size: 1rem;
+    margin-bottom: 16px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* Form */
+  .form-group { margin-bottom: 16px; }
+  .form-group label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+  }
+  .form-group input, .form-group select {
+    width: 100%;
+    padding: 14px 12px;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    text-align: center;
+    transition: border-color 0.3s;
+    -webkit-appearance: none;
+  }
+  .form-group input:focus, .form-group select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(230,57,70,0.1);
+  }
+  .form-group input[type="date"], .form-group input[type="time"] {
+    text-align: left;
+  }
+  .input-icon {
+    position: relative;
+  }
+  .input-icon span {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 700;
+  }
+  .btn-primary {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--primary), #c1121f);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 15px rgba(230,57,70,0.3);
+  }
+  .btn-primary:active {
+    transform: scale(0.98);
+    box-shadow: 0 2px 8px rgba(230,57,70,0.3);
+  }
+
+  /* Stats */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .stat-card {
+    text-align: center;
+    padding: 16px 8px;
+    border-radius: 12px;
+    background: var(--bg);
+  }
+  .stat-card .stat-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+  .stat-card .stat-value {
+    font-size: 1.5rem;
+    font-weight: 800;
+  }
+  .stat-card .stat-unit {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+  }
+  .stat-systolic .stat-value { color: var(--danger); }
+  .stat-diastolic .stat-value { color: var(--success); }
+  .stat-heart .stat-value { color: #e76f51; }
+
+  /* Record list */
+  .record-item {
+    display: flex;
+    align-items: center;
+    padding: 14px;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background 0.2s;
+  }
+  .record-item:last-child { border-bottom: none; }
+  .record-item:active { background: #f8f9fa; }
+  .record-date {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    min-width: 70px;
+  }
+  .record-values {
+    flex: 1;
+    display: flex;
+    gap: 12px;
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
+  .record-values .sys { color: var(--danger); }
+  .record-values .dia { color: var(--success); }
+  .record-values .hr { color: #e76f51; }
+  .record-delete {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: #fee2e2;
+    color: var(--danger);
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s;
+  }
+  .record-delete:active { transform: scale(0.9); }
+
+  /* Status badge */
+  .status-badge {
+    font-size: 0.65rem;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-weight: 700;
+  }
+  .status-normal { background: #d1fae5; color: #065f46; }
+  .status-elevated { background: #fef3c7; color: #92400e; }
+  .status-high { background: #fee2e2; color: #991b1b; }
+  .status-crisis { background: #fecaca; color: #7f1d1d; }
+
+  /* Chart */
+  .chart-container {
+    position: relative;
+    height: 250px;
+    width: 100%;
+  }
+  .chart-select {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    margin-bottom: 12px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236c757d' stroke-width='2' fill='none'/%3E%3C/svg%3E") no-repeat right 12px center;
+  }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-muted);
+  }
+  .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
+  .empty-state p { font-size: 0.9rem; }
+
+  /* Note field */
+  .form-note {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    resize: none;
+    -webkit-appearance: none;
+  }
+  .form-note:focus {
+    outline: none;
+    border-color: var(--primary);
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: #333;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 30px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 999;
+    white-space: nowrap;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* Tab content */
+  .tab-content { display: none; }
+  .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Responsive adjustments */
+  @media (max-width: 380px) {
+    .form-row { grid-template-columns: 1fr 1fr; }
+    .form-row .form-group:last-child { grid-column: 1 / -1; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>❤️ บันทึกความดันโลหิต</h1>
+  <p>Blood Pressure Tracker</p>
+</div>
+
+<div class="container">
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('input')">📝 บันทึก</button>
+    <button class="tab-btn" onclick="switchTab('records')">📋 ประวัติ</button>
+    <button class="tab-btn" onclick="switchTab('chart')">📊 กราฟ</button>
+  </div>
+
+  <!-- Tab 1: Input -->
+  <div id="tab-input" class="tab-content active">
+    <div class="card">
+      <h2>✍️ เพิ่มข้อมูลใหม่</h2>
+      <div class="form-group">
+        <label>วันที่และเวลา</label>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <input type="date" id="inputDate">
+          <input type="time" id="inputTime">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Systolic</label>
+          <div class="input-icon">
+            <input type="number" id="inputSys" placeholder="120" min="60" max="250" inputmode="numeric">
+            <span>mmHg</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Diastolic</label>
+          <div class="input-icon">
+            <input type="number" id="inputDia" placeholder="80" min="40" max="150" inputmode="numeric">
+            <span>mmHg</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Heart Rate</label>
+          <div class="input-icon">
+            <input type="number" id="inputHR" placeholder="72" min="30" max="220" inputmode="numeric">
+            <span>bpm</span>
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>หมายเหตุ (ถ้ามี)</label>
+        <textarea class="form-note" id="inputNote" rows="2" placeholder="เช่น ก่อนออกกำลังกาย, หลังทานยา..."></textarea>
+      </div>
+      <button class="btn-primary" onclick="addRecord()">💾 บันทึกข้อมูล</button>
+    </div>
+  </div>
+
+  <!-- Tab 2: Records -->
+  <div id="tab-records" class="tab-content">
+    <div id="statsContainer"></div>
+    <div class="card">
+      <h2>📋 ประวัติทั้งหมด <span id="recordCount" style="font-size:0.8rem; color:var(--text-muted); margin-left:auto;"></span></h2>
+      <div id="recordList"></div>
+    </div>
+  </div>
+
+  <!-- Tab 3: Chart -->
+  <div id="tab-chart" class="tab-content">
+    <div class="card">
+      <h2>📊 กราฟแนวโน้ม</h2>
+      <select class="chart-select" id="chartRange" onchange="updateChart()">
+        <option value="7">ย้อนหลัง 7 วัน</option>
+        <option value="14">ย้อนหลัง 14 วัน</option>
+        <option value="30">ย้อนหลัง 30 วัน</option>
+        <option value="90">ย้อนหลัง 90 วัน</option>
+        <option value="all">ทั้งหมด</option>
+      </select>
+      <div class="chart-container">
+        <canvas id="bpChart"></canvas>
+      </div>
+    </div>
+    <div class="card" style="padding: 12px 20px;">
+      <h2>📈 ค่าเฉลี่ย (ช่วงที่เลือก)</h2>
+      <div class="stats-grid" id="chartStats"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== Data Layer =====
+const STORAGE_KEY = 'bp_records';
+
+function getRecords() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+  } catch { return []; }
+}
+
+function saveRecords(records) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+}
+
+function getTodayStr() {
+  const d = new Date();
+  return d.toISOString().split('T')[0];
+}
+
+function getNowTime() {
+  const d = new Date();
+  return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+}
+
+// ===== UI =====
+function switchTab(tab) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  event.target.classList.add('active');
+  if (tab === 'records') renderRecords();
+  if (tab === 'chart') updateChart();
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function addRecord() {
+  const date = document.getElementById('inputDate').value;
+  const time = document.getElementById('inputTime').value;
+  const sys = parseInt(document.getElementById('inputSys').value);
+  const dia = parseInt(document.getElementById('inputDia').value);
+  const hr = parseInt(document.getElementById('inputHR').value);
+  const note = document.getElementById('inputNote').value.trim();
+
+  if (!date || !time) { showToast('⚠️ กรุณากรอกวันที่และเวลา'); return; }
+  if (!sys || sys < 60 || sys > 250) { showToast('⚠️ Systolic ต้องอยู่ในช่วง 60-250'); return; }
+  if (!dia || dia < 40 || dia > 150) { showToast('⚠️ Diastolic ต้องอยู่ในช่วง 40-150'); return; }
+  if (!hr || hr < 30 || hr > 220) { showToast('⚠️ Heart Rate ต้องอยู่ในช่วง 30-220'); return; }
+  if (sys <= dia) { showToast('⚠️ Systolic ต้องมากกว่า Diastolic'); return; }
+
+  const record = {
+    id: Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+    date, time, sys, dia, hr, note,
+    createdAt: new Date().toISOString()
+  };
+
+  const records = getRecords();
+  records.unshift(record);
+  saveRecords(records);
+
+  // Clear form
+  document.getElementById('inputSys').value = '';
+  document.getElementById('inputDia').value = '';
+  document.getElementById('inputHR').value = '';
+  document.getElementById('inputNote').value = '';
+
+  showToast('✅ บันทึกเรียบร้อยแล้ว');
+}
+
+function deleteRecord(id) {
+  if (!confirm('ต้องการลบข้อมูลนี้?')) return;
+  const records = getRecords().filter(r => r.id !== id);
+  saveRecords(records);
+  renderRecords();
+  showToast('🗑️ ลบข้อมูลแล้ว');
+}
+
+function getStatus(sys, dia) {
+  if (sys >= 180 || dia >= 120) return { label: 'วิกฤต', cls: 'status-crisis' };
+  if (sys >= 140 || dia >= 90) return { label: 'สูง', cls: 'status-high' };
+  if (sys >= 120 || dia >= 80) return { label: 'สูงเล็กน้อย', cls: 'status-elevated' };
+  return { label: 'ปกติ', cls: 'status-normal' };
+}
+
+function formatDate(d) {
+  const [y, m, day] = d.split('-');
+  const months = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  return `${day} ${months[parseInt(m)-1]} ${y}`;
+}
+
+function renderRecords() {
+  const records = getRecords();
+  const container = document.getElementById('recordList');
+  const countEl = document.getElementById('recordCount');
+  const statsEl = document.getElementById('statsContainer');
+  countEl.textContent = `${records.length} รายการ`;
+
+  if (records.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="icon">📭</div><p>ยังไม่มีข้อมูล<br>กดปุ่ม "บันทึก" เพื่อเพิ่มข้อมูล</p></div>`;
+    statsEl.innerHTML = '';
+    return;
+  }
+
+  // Stats
+  const avgSys = Math.round(records.reduce((s, r) => s + r.sys, 0) / records.length);
+  const avgDia = Math.round(records.reduce((s, r) => s + r.dia, 0) / records.length);
+  const avgHR = Math.round(records.reduce((s, r) => s + r.hr, 0) / records.length);
+  statsEl.innerHTML = `
+    <div class="stats-grid">
+      <div class="stat-card stat-systolic">
+        <div class="stat-label">Systolic เฉลี่ย</div>
+        <div class="stat-value">${avgSys}</div>
+        <div class="stat-unit">mmHg</div>
+      </div>
+      <div class="stat-card stat-diastolic">
+        <div class="stat-label">Diastolic เฉลี่ย</div>
+        <div class="stat-value">${avgDia}</div>
+        <div class="stat-unit">mmHg</div>
+      </div>
+      <div class="stat-card stat-heart">
+        <div class="stat-label">Heart Rate เฉลี่ย</div>
+        <div class="stat-value">${avgHR}</div>
+        <div class="stat-unit">bpm</div>
+      </div>
+    </div>
+  `;
+
+  // List
+  container.innerHTML = records.map(r => {
+    const st = getStatus(r.sys, r.dia);
+    return `
+      <div class="record-item">
+        <div class="record-date">${formatDate(r.date)}<br>${r.time}</div>
+        <div class="record-values">
+          <span class="sys">${r.sys}</span>
+          <span class="dia">/${r.dia}</span>
+          <span class="hr">♥${r.hr}</span>
+        </div>
+        <span class="status-badge ${st.cls}">${st.label}</span>
+        <button class="record-delete" onclick="deleteRecord('${r.id}')">×</button>
+      </div>
+    `;
+  }).join('');
+}
+
+// ===== Chart =====
+let chartInstance = null;
+
+function updateChart() {
+  const records = getRecords();
+  const rangeVal = document.getElementById('chartRange').value;
+
+  let filtered = records;
+  if (rangeVal !== 'all') {
+    const days = parseInt(rangeVal);
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - days);
+    const cutoffStr = cutoff.toISOString().split('T')[0];
+    filtered = records.filter(r => r.date >= cutoffStr);
+  }
+
+  const chartStats = document.getElementById('chartStats');
+
+  if (filtered.length === 0) {
+    chartStats.innerHTML = '<p style="text-align:center; color:var(--text-muted); padding:20px;">ไม่มีข้อมูลในช่วงนี้</p>';
+    if (chartInstance) chartInstance.destroy();
+    return;
+  }
+
+  // Sort by date
+  const sorted = [...filtered].sort((a, b) => (a.date + a.time) < (b.date + b.time) ? -1 : 1);
+  const labels = sorted.map(r => {
+    const [y,m,d] = r.date.split('-');
+    return `${parseInt(d)}/${parseInt(m)}`;
+  });
+  const sysData = sorted.map(r => r.sys);
+  const diaData = sorted.map(r => r.dia);
+  const hrData = sorted.map(r => r.hr);
+
+  // Chart stats
+  const avgSys = Math.round(sysData.reduce((a,b) => a+b, 0) / sysData.length);
+  const avgDia = Math.round(diaData.reduce((a,b) => a+b, 0) / diaData.length);
+  const avgHR = Math.round(hrData.reduce((a,b) => a+b, 0) / hrData.length);
+  chartStats.innerHTML = `
+    <div class="stat-card stat-systolic">
+      <div class="stat-label">Systolic เฉลี่ย</div>
+      <div class="stat-value">${avgSys}</div>
+      <div class="stat-unit">mmHg</div>
+    </div>
+    <div class="stat-card stat-diastolic">
+      <div class="stat-label">Diastolic เฉลี่ย</div>
+      <div class="stat-value">${avgDia}</div>
+      <div class="stat-unit">mmHg</div>
+    </div>
+    <div class="stat-card stat-heart">
+      <div class="stat-label">Heart Rate เฉลี่ย</div>
+      <div class="stat-value">${avgHR}</div>
+      <div class="stat-unit">bpm</div>
+    </div>
+  `;
+
+  if (chartInstance) chartInstance.destroy();
+
+  chartInstance = new Chart(document.getElementById('bpChart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Systolic',
+          data: sysData,
+          borderColor: '#e63946',
+          backgroundColor: 'rgba(230,57,70,0.1)',
+          borderWidth: 2.5,
+          pointRadius: 4,
+          pointBackgroundColor: '#e63946',
+          tension: 0.3,
+          fill: true
+        },
+        {
+          label: 'Diastolic',
+          data: diaData,
+          borderColor: '#2a9d8f',
+          backgroundColor: 'rgba(42,157,143,0.1)',
+          borderWidth: 2.5,
+          pointRadius: 4,
+          pointBackgroundColor: '#2a9d8f',
+          tension: 0.3,
+          fill: true
+        },
+        {
+          label: 'Heart Rate',
+          data: hrData,
+          borderColor: '#e76f51',
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          borderDash: [5, 5],
+          pointRadius: 3,
+          pointBackgroundColor: '#e76f51',
+          tension: 0.3
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { intersect: false, mode: 'index' },
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { usePointStyle: true, padding: 15, font: { size: 11 } }
+        },
+        tooltip: {
+          backgroundColor: 'rgba(0,0,0,0.8)',
+          padding: 12,
+          titleFont: { size: 12 },
+          bodyFont: { size: 11 },
+          callbacks: {
+            label: (ctx) => {
+              const unit = ctx.dataset.label === 'Heart Rate' ? ' bpm' : ' mmHg';
+              return ` ${ctx.dataset.label}: ${ctx.parsed.y}${unit}`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { font: { size: 10 }, maxRotation: 45 }
+        },
+        y: {
+          beginAtZero: false,
+          suggestedMin: 40,
+          suggestedMax: 180,
+          grid: { color: '#f0f0f0' },
+          ticks: { font: { size: 10 } }
+        }
+      }
+    }
+  });
+}
+
+// ===== Init =====
+(function init() {
+  document.getElementById('inputDate').value = getTodayStr();
+  document.getElementById('inputTime').value = getNowTime();
+})();
+</script>
+</body>
+</html>
